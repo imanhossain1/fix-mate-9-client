@@ -9,9 +9,25 @@ const Navbar = () => {
   const router = useRouter();
   const { data: session, isPending } = useSession();
 
+  // Login করা User-এর Role অনুযায়ী Dashboard URL তৈরি
+  const role = session?.user?.role;
+ console.log('sesstio n role ====',role);
+ 
+
+  const dashboardLink = {
+    customer: "/dashboard/customer",
+    technician: "/dashboard/technician",
+    admin: "/dashboard/admin",
+  };
+
+  // User-এর Role অনুযায়ী Dashboard Link নির্বাচন
+  const userDashboard = dashboardLink[role] || "/dashboard/customer";
+
+  // Logout Function
   const handleSignOut = async () => {
     await signOut();
     router.push("/");
+    router.refresh();
   };
 
   return (
@@ -51,19 +67,68 @@ const Navbar = () => {
           {!isPending && (
             <>
               {session?.user ? (
-                <>
-                  <span className="hidden sm:inline font-semibold">
-                    {session.user.name}
-                  </span>
+
+                // Login করা User-এর Profile Dropdown
+                <div className="dropdown dropdown-end">
 
                   <button
-                    onClick={handleSignOut}
-                    className="btn btn-outline btn-error btn-sm sm:btn-md"
+                    tabIndex={0}
+                    className="btn btn-ghost flex items-center gap-2"
                   >
-                    Sign Out
+                    {/* User Avatar */}
+                    <div className="avatar placeholder">
+                      <div className="w-9 rounded-full bg-primary text-primary-content">
+                        <span>
+                          {session.user.name?.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* User Name */}
+                    <span className="hidden sm:inline font-semibold">
+                      {session.user.name}
+                    </span>
+
+                    <span>⌄</span>
                   </button>
-                </>
+
+                  {/* Dropdown Menu */}
+                  <ul
+                    tabIndex={0}
+                    className="menu dropdown-content z-50 mt-3 w-56 rounded-box bg-base-100 p-3 shadow-lg"
+                  >
+                    {/* Dashboard Link */}
+                    <li>
+                      <Link href={userDashboard}>
+                        📊 Dashboard
+                      </Link>
+                    </li>
+
+                    {/* Profile Link */}
+                    <li>
+                      <Link href="/dashboard/profile">
+                        👤 My Profile
+                      </Link>
+                    </li>
+
+                    <div className="divider my-1"></div>
+
+                    {/* Sign Out */}
+                    <li>
+                      <button
+                        onClick={handleSignOut}
+                        className="text-error"
+                      >
+                        🚪 Sign Out
+                      </button>
+                    </li>
+                  </ul>
+
+                </div>
+
               ) : (
+
+                // Login না করা User
                 <>
                   <Link
                     href="/sign-in"
@@ -95,7 +160,7 @@ const Navbar = () => {
 
             <ul
               tabIndex={0}
-              className="menu dropdown-content z-50 mt-3 w-52 rounded-box bg-base-100 p-3 shadow-lg"
+              className="menu dropdown-content z-50 mt-3 w-56 rounded-box bg-base-100 p-3 shadow-lg"
             >
               <li><Link href="/">Home</Link></li>
               <li><Link href="/services">Services</Link></li>
@@ -103,11 +168,31 @@ const Navbar = () => {
 
               {!isPending && (
                 session?.user ? (
-                  <li>
-                    <button onClick={handleSignOut}>
-                      Sign Out
-                    </button>
-                  </li>
+                  <>
+                    {/* Mobile Dashboard Link */}
+                    <li>
+                      <Link href={userDashboard}>
+                        📊 Dashboard
+                      </Link>
+                    </li>
+
+                    {/* Mobile Profile Link */}
+                    <li>
+                      <Link href="/dashboard/profile">
+                        👤 My Profile
+                      </Link>
+                    </li>
+
+                    {/* Mobile Logout */}
+                    <li>
+                      <button
+                        onClick={handleSignOut}
+                        className="text-error"
+                      >
+                        🚪 Sign Out
+                      </button>
+                    </li>
+                  </>
                 ) : (
                   <>
                     <li><Link href="/sign-in">Sign In</Link></li>
