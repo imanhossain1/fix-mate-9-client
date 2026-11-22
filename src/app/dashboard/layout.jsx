@@ -1,182 +1,87 @@
-
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { auth } from "../../lib/auth";
-
-// ==========================================
-// Dashboard Layout
-// এই Layout তিনটি Role-এর জন্য ব্যবহার হবে।
-// ==========================================
+import { auth } from "@/lib/auth";
 
 export default async function DashboardLayout({ children }) {
-
-  // STEP 1:
-  // BetterAuth থেকে Login করা User-এর Session আনছি।
-
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  // STEP 2:
-  // Login না থাকলে Sign In Page-এ পাঠাব।
-
-  if (!session) {
+  if (!session || !session.user) {
     redirect("/sign-in");
   }
 
-  // STEP 3:
-  // Login করা User-এর Role সংগ্রহ করছি।
+  const role = session.user?.role || "customer";
 
-  const role = session.user.role;
-
-  // STEP 4:
-  // User-এর নাম ও প্রথম অক্ষর সংগ্রহ করছি।
-
-  const userName = session.user.name || "User";
-  const avatarLetter = userName.charAt(0).toUpperCase();
-
-  // STEP 5:
-  // Admin, Customer ও Technician-এর আলাদা Menu তৈরি করছি।
-
-  const menus = {
-
-    // Admin-এর Menu
-    admin: [
-      { name: "Overview", link: "/dashboard/admin", icon: "📊" },
-      { name: "Manage Users", link: "/dashboard/admin/users", icon: "👥" },
-      { name: "Manage Services", link: "/dashboard/admin/services", icon: "🔧" },
-      { name: "Manage Bookings", link: "/dashboard/admin/bookings", icon: "📅" },
-      { name: "Payments", link: "/dashboard/admin/payments", icon: "💳" },
-    ],
-
-    // Customer-এর Menu
+  const navLinksByRole = {
     customer: [
-      { name: "Overview", link: "/dashboard/customer", icon: "📊" },
-      { name: "Browse Services", link: "/services", icon: "🔧" },
-      { name: "My Bookings", link: "/dashboard/customer/bookings", icon: "📅" },
-      { name: "Payment History", link: "/dashboard/customer/payments", icon: "💳" },
+      { label: "Overview", href: "/dashboard/customer" },
+      { label: "My Bookings", href: "/dashboard/customer/bookings" },
+      { label: "Payment History", href: "/dashboard/customer/payments" },
+      { label: "Update Profile", href: "/dashboard/profile" },
     ],
-
-    // Technician-এর Menu
     technician: [
-      { name: "Overview", link: "/dashboard/technician", icon: "📊" },
-      { name: "My Services", link: "/dashboard/technician/services", icon: "🛠️" },
-      { name: "Booking Requests", link: "/dashboard/technician/bookings", icon: "📅" },
-      { name: "Completed Jobs", link: "/dashboard/technician/completed", icon: "✅" },
+      { label: "Overview", href: "/dashboard/technician" },
+      { label: "Add Service", href: "/dashboard/technician/add-service" },
+      { label: "My Services", href: "/dashboard/technician/my-services" },
+      { label: "Requests", href: "/dashboard/technician/requests" },
+      { label: "Update Profile", href: "/dashboard/profile" },
     ],
-
+    admin: [
+      { label: "Overview", href: "/dashboard/admin" },
+      { label: "Manage Users", href: "/dashboard/admin/users" },
+      { label: "Service Approval", href: "/dashboard/admin/services" },
+      { label: "All Bookings", href: "/dashboard/admin/bookings" },
+      { label: "Transactions", href: "/dashboard/admin/transactions" },
+      { label: "Update Profile", href: "/dashboard/profile" },
+    ],
   };
 
-  // STEP 6:
-  // বর্তমান Role অনুযায়ী Menu নির্বাচন করছি।
-
-  const currentMenu = menus[role];
-
-  // STEP 7:
-  // অজানা Role হলে Sign In Page-এ পাঠাব।
-
-  if (!currentMenu) {
-    redirect("/sign-in");
-  }
-
-  // STEP 8:
-  // Dashboard UI দেখাচ্ছি।
+  const links = navLinksByRole[role] || navLinksByRole.customer;
 
   return (
-    <div className="min-h-screen bg-base-200">
+    <div className="min-h-screen flex bg-base-200">
+      {/* Sidebar */}
+      <aside className="w-64 bg-base-100 border-r p-4 flex flex-col justify-between">
+        <div>
+          <div className="mb-6 pb-3 border-b">
+            <Link href="/" className="text-xl font-bold text-primary">
+              FixMate
+            </Link>
+            <p className="text-xs uppercase opacity-70 mt-1">{role}</p>
+          </div>
 
-      {/* =================================
-          LEFT SIDEBAR
-          এখানে Role অনুযায়ী Menu দেখাবে।
-      ================================= */}
-
-      <aside className="fixed left-0 top-0 h-screen w-64 bg-base-100 border-r border-base-300 p-5">
-
-        {/* Website Logo */}
-
-        <Link href="/" className="text-2xl font-bold text-primary">
-          FixMate
-        </Link>
-
-        <p className="text-sm text-base-content/50 mt-1">
-          {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
-        </p>
-
-        <div className="divider"></div>
-
-        {/* Dynamic Navigation Menu */}
-
-        <ul className="menu gap-2">
-
-          {currentMenu.map((item) => (
-            <li key={item.link}>
-              <Link href={item.link}>
-                <span>{item.icon}</span>
-                {item.name}
-              </Link>
-            </li>
-          ))}
-
-        </ul>
-
-        {/* Back to Website Button */}
-
-        <div className="absolute bottom-5 left-5 right-5">
-          <Link href="/" className="btn btn-outline btn-sm w-full">
-            ← Back to Website
-          </Link>
+          <ul className="menu gap-1 p-0">
+            {links.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href}>{item.label}</Link>
+              </li>
+            ))}
+          </ul>
         </div>
 
+        <div className="pt-4 border-t text-xs">
+          <Link href="/" className="link link-hover block mb-2">
+            Back to Home
+          </Link>
+          <p className="font-medium truncate">{session.user.name || "User"}</p>
+          <p className="opacity-70 truncate">{session.user.email}</p>
+        </div>
       </aside>
 
-      {/* =================================
-          MAIN CONTENT
-          Sidebar-এর ডান পাশে Page দেখাবে।
-      ================================= */}
-
-      <main className="ml-64 min-h-screen p-6">
-
-        {/* Top Navbar */}
-
-        <header className="navbar bg-base-100 rounded-xl px-5 shadow-sm mb-6">
-
-          <div className="navbar-start">
-            <h2 className="text-lg font-semibold">
-              {role.charAt(0).toUpperCase() + role.slice(1)} Dashboard
-            </h2>
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col">
+        <header className="bg-base-100 border-b px-6 py-3 flex items-center justify-between">
+          <span className="text-sm font-medium capitalize">{role} Dashboard</span>
+          <div className="flex items-center gap-3 text-sm">
+            <span>{session.user.name || session.user.email}</span>
+            <span className="badge badge-outline capitalize">{role}</span>
           </div>
-
-          <div className="navbar-end gap-3">
-
-            {/* Login করা User-এর নাম */}
-
-            <span className="text-sm">
-              Welcome, {userName}
-            </span>
-
-            {/* User Avatar */}
-
-            <div className="avatar placeholder">
-              <div className="bg-primary text-primary-content rounded-full w-10">
-                <span>{avatarLetter}</span>
-              </div>
-            </div>
-
-          </div>
-
         </header>
 
-        {/* =================================
-            CHILDREN
-            এখানে Admin, Customer অথবা
-            Technician-এর Page দেখাবে।
-        ================================= */}
-
-        {children}
-
-      </main>
-
+        <main className="flex-1 p-6">{children}</main>
+      </div>
     </div>
   );
 }
