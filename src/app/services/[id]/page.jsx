@@ -1,223 +1,178 @@
 "use client";
 
-import {useParams} from "next/navigation";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import BookingRequestForm from "@/components/services/BookingRequestForm";
-const services = [
-    {
-        id: 1,
-        title: "AC Repair & Servicing",
-        category: "AC Repair",
-        price: 500,
-        icon: "❄️",
-        description:
-            "Professional AC repair, cleaning, installation and maintenance services. Our experienced technicians provide reliable AC servicing at your doorstep.",
-        image: "https://images.unsplash.com/photo-1631545806609-7e6f3f5f6f7a",
-        features: ["AC Installation", "AC Gas Refill", "AC Cleaning", "AC Troubleshooting"],
-    },
-    {
-        id: 2,
-        title: "Laptop Repair",
-        category: "Computer",
-        price: 400,
-        icon: "💻",
-        description:
-            "Expert laptop diagnosis, hardware replacement and software repair services by experienced technicians.",
-        image: "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed",
-        features: [
-            "Laptop Display Repair",
-            "Keyboard Replacement",
-            "Software Installation",
-            "Hardware Troubleshooting",
-        ],
-    },
-    {
-        id: 3,
-        title: "Mobile Repair",
-        category: "Mobile",
-        price: 300,
-        icon: "📱",
-        description: "Fast mobile display, battery and hardware repair services by professional technicians.",
-        image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9",
-        features: ["Display Replacement", "Battery Replacement", "Charging Port Repair", "Software Issues"],
-    },
-    {
-        id: 4,
-        title: "Refrigerator Repair",
-        category: "Home Appliance",
-        price: 600,
-        icon: "🧊",
-        description: "Reliable refrigerator diagnosis, repair and maintenance solutions for your home.",
-        image: "https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5",
-        features: ["Cooling Problems", "Gas Refill", "Compressor Repair", "Regular Maintenance"],
-    },
-    {
-        id: 5,
-        title: "TV Repair",
-        category: "Electronics",
-        price: 500,
-        icon: "📺",
-        description: "Professional LED, LCD and Smart TV repair services.",
-        image: "https://images.unsplash.com/photo-1593359677879-a4bb92f829d1",
-        features: ["Display Problems", "Sound Problems", "Smart TV Setup", "Hardware Repair"],
-    },
-    {
-        id: 6,
-        title: "Washing Machine Repair",
-        category: "Home Appliance",
-        price: 550,
-        icon: "🫧",
-        description: "Expert washing machine troubleshooting and repair at your doorstep.",
-        image: "https://images.unsplash.com/photo-1626806787461-102c1bfaaea1",
-        features: ["Water Leakage Repair", "Motor Repair", "Drainage Problems", "Regular Maintenance"],
-    },
-    {
-        id: 7,
-        title: "Desktop Computer Repair",
-        category: "Computer",
-        price: 450,
-        icon: "🖥️",
-        description: "Desktop hardware, motherboard and software troubleshooting.",
-        image: "https://images.unsplash.com/photo-1587831990711-23ca6441447b",
-        features: ["Motherboard Repair", "Windows Installation", "Hardware Upgrade", "Virus Removal"],
-    },
-    {
-        id: 8,
-        title: "Microwave Oven Repair",
-        category: "Home Appliance",
-        price: 350,
-        icon: "🍲",
-        description: "Professional microwave oven diagnosis and repair services.",
-        image: "https://images.unsplash.com/photo-1585659722983-3a675dabf23d",
-        features: ["Heating Problems", "Door Repair", "Electrical Issues", "Regular Maintenance"],
-    },
-    {
-        id: 9,
-        title: "Printer Repair",
-        category: "Electronics",
-        price: 300,
-        icon: "🖨️",
-        description: "Printer servicing, ink issues and hardware troubleshooting.",
-        image: "https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6",
-        features: ["Paper Jam Repair", "Ink Problems", "Printer Setup", "Hardware Troubleshooting"],
-    },
-];
+import { getSingleService } from "@/lib/api";
 
 export default function ServiceDetailsPage() {
-    // URL theke dynamic ID nebo
-    const params = useParams();
+  const params = useParams();
+  const id = params.id;
 
-    // URL-er ID number e convert korbo
-    const serviceId = Number(params.id);
+  const [service, setService] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-    // ID diye service khujbo
-    const service = services.find((item) => item.id === serviceId);
+  useEffect(() => {
+    getSingleService(id)
+      .then((data) => {
+        if (!data || !data._id || data.approvalStatus !== "approved" || !data.isAvailable) {
+          setError("Service Not Found");
+          return;
+        }
 
-    // Service na pele
-    if (!service) {
-        return (
-            <main className="flex min-h-screen flex-col items-center justify-center gap-4 px-5 text-center">
-                <h1 className="text-3xl font-bold">Service Not Found</h1>
+        setService(data);
+      })
+      .catch(() => setError("Failed to load service"))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-                <p className="text-base-content/60">Sorry, this service does not exist.</p>
-
-                <Link href="/services" className="btn btn-primary">
-                    Back to Services
-                </Link>
-            </main>
-        );
-    }
-
+  if (loading) {
     return (
-        <main className="min-h-screen bg-base-100">
-            {/* Page Header */}
-            <section className="bg-base-200 px-5 py-12">
-                <div className="mx-auto max-w-7xl">
-                    <Link href="/services" className="text-primary font-semibold">
-                        ← Back to Services
-                    </Link>
-
-                    <div className="mt-6">
-                        <span className="badge badge-primary">{service.category}</span>
-
-                        <h1 className="mt-4 text-3xl font-bold md:text-5xl">{service.title}</h1>
-
-                        <p className="mt-4 max-w-2xl text-base-content/60">
-                            Professional repair service from trusted FixMate technicians.
-                        </p>
-                    </div>
-                </div>
-            </section>
-
-            {/* Details Section */}
-            <section className="mx-auto grid max-w-7xl gap-10 px-5 py-14 lg:grid-cols-3">
-                {/* Service Information */}
-                <div className="space-y-8 lg:col-span-2">
-                    <img
-                        src={service.image}
-                        alt={service.title}
-                        className="h-72 w-full rounded-2xl object-cover md:h-96"
-                    />
-
-                    <div>
-                        <h2 className="text-2xl font-bold">About This Service</h2>
-
-                        <p className="mt-4 leading-8 text-base-content/70">{service.description}</p>
-                    </div>
-
-                    <div>
-                        <h2 className="text-2xl font-bold">What's Included?</h2>
-
-                        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                            {service.features.map((feature) => (
-                                <div key={feature} className="rounded-xl bg-base-200 p-4">
-                                    <span className="mr-2 text-success">✓</span>
-                                    {feature}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Price Card */}
-                <aside>
-                    <div className="sticky top-24 rounded-2xl border border-base-300 p-6 shadow-lg">
-                        <p className="text-sm text-base-content/60">Starting Service Price</p>
-
-                        <h2 className="mt-2 text-3xl font-bold text-primary">৳{service.price}</h2>
-
-                        <div className="divider"></div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between gap-3">
-                                <span className="text-base-content/60">Service</span>
-                                <span className="font-semibold text-right">{service.title}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                                <span className="text-base-content/60">Category</span>
-                                <span className="font-semibold">{service.category}</span>
-                            </div>
-
-                            <div className="flex justify-between">
-                                <span className="text-base-content/60">Service ID</span>
-                                <span className="font-semibold">#{service.id}</span>
-                            </div>
-                        </div>
-
-                        <div className="divider"></div>
-
-                        <p className="text-sm leading-6 text-base-content/60">
-                            Final repair cost may vary depending on the problem and required parts.
-                        </p>
-
-                        {/* Booking Request Form */}
-                        <section id="booking-form" className="bg-base-200 px-5 py-14">
-                            <BookingRequestForm service={service} />
-                        </section>
-                    </div>
-                </aside>
-            </section>
-        </main>
+      <div className="flex min-h-screen items-center justify-center">
+        <span className="loading loading-spinner loading-lg text-primary"></span>
+      </div>
     );
+  }
+
+  if (error || !service) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 text-center">
+        <h1 className="text-3xl font-bold">Service Not Found</h1>
+        <p>This service does not exist or is not available.</p>
+        <Link href="/services" className="btn btn-primary">
+          Back to Services
+        </Link>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-base-100">
+
+      {/* Header */}
+      <section className="bg-base-200 px-5 py-12">
+        <div className="mx-auto max-w-7xl">
+          <Link href="/services" className="font-semibold text-primary">
+            ← Back to Services
+          </Link>
+
+          <div className="mt-6">
+            <span className="badge badge-primary">
+              {service.category}
+            </span>
+
+            <h1 className="mt-4 text-3xl font-bold md:text-5xl">
+              {service.title}
+            </h1>
+
+            <p className="mt-4 text-base-content/60">
+              Professional repair service from FixMate technicians.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Details */}
+      <section className="mx-auto grid max-w-7xl gap-10 px-5 py-14 lg:grid-cols-3">
+
+        {/* Service Information */}
+        <div className="space-y-8 lg:col-span-2">
+
+          <img
+            src={service.image}
+            alt={service.title}
+            className="h-72 w-full rounded-2xl object-cover md:h-96"
+          />
+
+          <div>
+            <h2 className="text-2xl font-bold">About This Service</h2>
+            <p className="mt-4 leading-8 text-base-content/70">
+              {service.description}
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold">Service Information</h2>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="rounded-xl bg-base-200 p-4">
+                <p className="text-sm opacity-60">Estimated Duration</p>
+                <p className="font-bold">{service.estimatedDuration}</p>
+              </div>
+
+              <div className="rounded-xl bg-base-200 p-4">
+                <p className="text-sm opacity-60">Service Mode</p>
+                <p className="font-bold">{service.serviceMode}</p>
+              </div>
+
+              <div className="rounded-xl bg-base-200 p-4">
+                <p className="text-sm opacity-60">Service Area</p>
+                <p className="font-bold">{service.serviceArea}</p>
+              </div>
+
+              <div className="rounded-xl bg-base-200 p-4">
+                <p className="text-sm opacity-60">Category</p>
+                <p className="font-bold">{service.category}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Technician Information */}
+          <div className="rounded-2xl border p-6">
+            <h2 className="text-2xl font-bold">Technician Information</h2>
+
+            <div className="mt-4 space-y-2">
+              <p>
+                <strong>Name:</strong> {service.technicianName}
+              </p>
+              <p>
+                <strong>Service Area:</strong> {service.serviceArea}
+              </p>
+              <p>
+                <strong>Email:</strong> {service.technicianEmail}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Price & Booking */}
+        <aside>
+          <div className="sticky top-24 rounded-2xl border border-base-300 p-6 shadow-lg">
+
+            <p className="text-sm opacity-60">Starting Service Price</p>
+
+            <h2 className="mt-2 text-3xl font-bold text-primary">
+              ৳{service.basePrice}
+            </h2>
+
+            <div className="divider"></div>
+
+            <div className="space-y-4">
+              <div className="flex justify-between gap-3">
+                <span className="opacity-60">Service</span>
+                <span className="font-semibold">{service.title}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="opacity-60">Duration</span>
+                <span className="font-semibold">{service.estimatedDuration}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="opacity-60">Mode</span>
+                <span className="font-semibold">{service.serviceMode}</span>
+              </div>
+            </div>
+
+            <div className="divider"></div>
+
+            <BookingRequestForm service={service} />
+
+          </div>
+        </aside>
+      </section>
+    </main>
+  );
 }

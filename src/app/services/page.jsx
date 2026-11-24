@@ -3,6 +3,8 @@ import { getServices } from "../../lib/api";
 
 export default async function ServicesPage() {
     const services = await getServices();
+    console.log('services data ', services);
+    
 
     return (
         <main className="container mx-auto p-6">

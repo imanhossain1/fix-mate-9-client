@@ -24,12 +24,13 @@ export const apiAddServiceFunction = async (serviceData) => {
   return data;
 };
 
-// Get All Services
+// Get All Services load data
 export const getServices = async () => {
   const res = await fetch(`${API_URL}/services`);
 
   const data = await res.json();
-
+ console.log('api responsense', data);
+ 
   if (!res.ok) {
     throw new Error(data.message || "Failed to fetch services");
   }
@@ -37,36 +38,59 @@ export const getServices = async () => {
   return data;
 };
 
-// Update Service / Availability
-export const updateServiceById = async (id, payload) => {
-  const res = await fetch(`${API_URL}/services/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
 
+/// Get Single Service
+export const getSingleService = async (id) => {
+  const res = await fetch(`${API_URL}/services/${id}`);
   const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Failed to update service");
-  }
-
+  if (!res.ok) throw new Error(data.message);
   return data;
 };
 
-// Delete Service
-export const deleteServiceById = async (id) => {
-  const res = await fetch(`${API_URL}/services/${id}`, {
-    method: "DELETE",
+// Create Booking
+export const createBooking = async (bookingData) => {
+  const res = await fetch(`${API_URL}/bookings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(bookingData),
   });
-
   const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data.message || "Failed to delete service");
-  }
-
+  if (!res.ok) throw new Error(data.message);
   return data;
+};
+
+// Get all services for Admin
+export const getAdminServices = async () => {
+    const res = await fetch(`${API_URL}/admin/services`);
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to get services");
+    }
+
+    return data;
+};
+
+
+// Approve or Reject service
+export const updateServiceApproval = async (id, approvalStatus) => {
+    const res = await fetch(
+        `${API_URL}/admin/services/${id}/status`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ approvalStatus }),
+        }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+        throw new Error(data.message || "Failed to update service");
+    }
+
+    return data;
 };
