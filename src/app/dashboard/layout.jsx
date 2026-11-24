@@ -30,9 +30,9 @@ export default async function DashboardLayout({ children }) {
     ],
     admin: [
       { label: "Overview", href: "/dashboard/admin" },
-      { label: "Manage Users", href: "/dashboard/admin/users" },
-      { label: "Service Approval", href: "/dashboard/admin/services" },
-      { label: "All Bookings", href: "/dashboard/admin/bookings" },
+      { label: "Manage Users", href: "/dashboard/admin/manage-users" },
+      { label: "Manage Services Approval", href: "/dashboard/admin/services" },
+      { label: "Mange Booking", href: "/dashboard/admin/manage-booking" },
       { label: "Transactions", href: "/dashboard/admin/transactions" },
       { label: "Update Profile", href: "/dashboard/profile" },
     ],

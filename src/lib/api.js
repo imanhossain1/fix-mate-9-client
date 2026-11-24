@@ -73,7 +73,7 @@ export const getAdminServices = async () => {
 };
 
 
-// Approve or Reject service
+// admin Approve or Reject service
 export const updateServiceApproval = async (id, approvalStatus) => {
     const res = await fetch(
         `${API_URL}/admin/services/${id}/status`,
@@ -93,4 +93,38 @@ export const updateServiceApproval = async (id, approvalStatus) => {
     }
 
     return data;
+};
+
+// ========================================
+// Admin - Get All Bookings
+// ========================================
+
+export const getAdminBookings = async () => {
+  const res = await fetch(`${API_URL}/admin/bookings`);
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to get bookings");
+  }
+
+  return data;
+};
+
+
+
+// ========================================
+// Admin - Get All Users
+// ========================================
+
+export const getAllUsers = async () => {
+  const res = await fetch(`${API_URL}/users`);
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to get users");
+  }
+
+  return data;
 };
