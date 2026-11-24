@@ -1,42 +1,13 @@
-export const getServices = async () => {
-    const res = await fetch("http://localhost:8000/services");
 
-    if (!res.ok) {
-        throw new Error("Failed to fetch services");
-    }
 
-    return res.json();
-};
 
 
 const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-// Create Repair Request
-export const createRepairRequest = async (requestData) => {
-    const res = await fetch(`${API_URL}/booking-requests`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(requestData),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-        throw new Error(data.message || "Request submission failed");
-    }
-
-    return data;
-};
-
-
-// add-services 
-
-export async function apiAddServiceFunction(serviceData) {
-  const res = await fetch("http://localhost:5000/add-service", {
+// Add Service
+export const apiAddServiceFunction = async (serviceData) => {
+  const res = await fetch(`${API_URL}/add-service`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -51,4 +22,51 @@ export async function apiAddServiceFunction(serviceData) {
   }
 
   return data;
-}
+};
+
+// Get All Services
+export const getServices = async () => {
+  const res = await fetch(`${API_URL}/services`);
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to fetch services");
+  }
+
+  return data;
+};
+
+// Update Service / Availability
+export const updateServiceById = async (id, payload) => {
+  const res = await fetch(`${API_URL}/services/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to update service");
+  }
+
+  return data;
+};
+
+// Delete Service
+export const deleteServiceById = async (id) => {
+  const res = await fetch(`${API_URL}/services/${id}`, {
+    method: "DELETE",
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.message || "Failed to delete service");
+  }
+
+  return data;
+};
