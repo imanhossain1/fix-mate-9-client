@@ -1,91 +1,38 @@
+import Link from "next/link";
 
-const categories = [
-  {
-    id: 1,
-    icon: "❄️",
-    title: "AC Repair",
-    description: "AC servicing, installation and repair.",
-  },
-  {
-    id: 2,
-    icon: "💻",
-    title: "Computer & Laptop",
-    description: "Computer and laptop troubleshooting.",
-  },
-  {
-    id: 3,
-    icon: "📱",
-    title: "Mobile Repair",
-    description: "Mobile display, battery and hardware repair.",
-  },
-  {
-    id: 4,
-    icon: "📺",
-    title: "TV & Electronics",
-    description: "LED, LCD and smart TV repair.",
-  },
-  {
-    id: 5,
-    icon: "🧊",
-    title: "Refrigerator",
-    description: "Fridge maintenance and repair.",
-  },
-  {
-    id: 6,
-    icon: "🫧",
-    title: "Home Appliances",
-    description: "Washing machine and other appliance repair.",
-  },
+const CATEGORIES = [
+  { name: "Smartphone", icon: "📱", desc: "Screen, battery & charging fix" },
+  { name: "Laptop & PC", icon: "💻", desc: "Hardware, OS & thermal service" },
+  { name: "AC", icon: "❄️", desc: "Cooling, gas refill & deep clean" },
+  { name: "Refrigerator", icon: "🧊", desc: "Compressor & cooling repair" },
+  { name: "TV", icon: "📺", desc: "Display, backlight & board fix" },
+  { name: "Washing Machine", icon: "🧺", desc: "Drum, motor & drain repair" },
+  { name: "Electrical", icon: "⚡", desc: "Wiring, switches & breaker fix" },
 ];
 
-const PopularCategories = () => {
+export default function PopularCategories() {
   return (
-    <section className="bg-base-100 px-5 py-20">
-      <div className="mx-auto max-w-7xl">
+    <section className="mx-auto max-w-7xl px-5 py-14">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold md:text-3xl">Popular Categories</h2>
+        <p className="mt-2 text-base-content/70">
+          Choose a repair category to browse available technicians.
+        </p>
+      </div>
 
-        {/* Heading */}
-        <div className="mb-12 text-center">
-          <p className="font-semibold uppercase tracking-widest text-primary">
-            Explore Categories
-          </p>
-
-          <h2 className="mt-3 text-3xl font-bold md:text-4xl">
-            Popular Repair Categories
-          </h2>
-
-          <p className="mx-auto mt-4 max-w-2xl text-base-content/60">
-            Whatever the problem, find the right repair
-            category and get professional help.
-          </p>
-        </div>
-
-        {/* Category Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {categories.map((category) => (
-            <div
-              key={category.id}
-              className="group flex items-center gap-5 rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm transition hover:border-primary hover:shadow-lg"
-            >
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-3xl transition group-hover:bg-primary group-hover:text-white">
-                {category.icon}
-              </div>
-
-              <div>
-                <h3 className="text-lg font-bold">
-                  {category.title}
-                </h3>
-
-                <p className="mt-2 text-sm text-base-content/60">
-                  {category.description}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {CATEGORIES.map((item) => (
+          <Link
+            key={item.name}
+            href={`/services?category=${encodeURIComponent(item.name)}`}
+            className="card border border-base-300 bg-base-100 p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-primary"
+          >
+            <div className="text-3xl">{item.icon}</div>
+            <h3 className="mt-3 text-lg font-bold">{item.name}</h3>
+            <p className="mt-1 text-sm text-base-content/70">{item.desc}</p>
+          </Link>
+        ))}
       </div>
     </section>
   );
-};
-
-export default PopularCategories;
+}

@@ -1,73 +1,136 @@
-# FixMate — একদম শুরু থেকে শেষ পর্যন্ত সহজ বাংলা রোডম্যাপ
 
-## প্রজেক্ট কী? (সংক্ষেপে)
-**FixMate** হলো একটি অনলাইন ডিভাইস ও হোম অ্যাপ্লায়েন্স রিপেয়ার সার্ভিস প্ল্যাটফর্ম।
-এখানে **৩ ধরনের ইউজার (Role)** থাকবে:
-1. **Technician (টেকনিশিয়ান):** সে নিজের রিপেয়ার সার্ভিস (যেমন AC বা মোবাইল সার্ভিসিং) যোগ করবে। অ্যাডমিন অ্যাপ্রুভ করলে সেটি সবাই দেখতে পাবে। কাস্টমার রিকোয়েস্ট পাঠালে সে কাজটি ধাপে ধাপে শেষ করবে এবং কাজের শেষে ফাইনাল বিল বসাবে।
-2. **Customer (কাস্টমার):** সে অ্যাপ্রুভ হওয়া সার্ভিসগুলো দেখবে, রিপেয়ার রিকোয়েস্ট পাঠাবে, কাজ শেষ হলে Stripe দিয়ে অনলাইনে পেমেন্ট করবে।
-3. **Admin (অ্যাডমিন):** সে টেকনিশিয়ানদের নতুন সার্ভিস অ্যাপ্রুভ/রিজেক্ট করবে, ইউজারদের রোল পরিবর্তন করবে এবং সব বুকিং ও পেমেন্ট মনিটর করবে।
+Niche FixMate-er **shob page-er ekta clean "Mind Map" (Route + Main Kaj)** dewa holo, jate ek nojore sob mone rakhte paren:
 
 ---
 
-## ডাটাবেজে মোট ৪টি কালেকশন (MongoDB Collections)
-1. **`users`:** সব ইউজারের নাম, ইমেইল, ছবি, রোল (`customer` / `technician` / `admin`), ফোন, এলাকা ও বায়ো থাকবে।
-2. **`services`:** টেকনিশিয়ানের যোগ করা সার্ভিস (টাইটেল, ক্যাটাগরি, দাম, ছবি, `approvalStatus: 'pending' | 'approved' | 'rejected'`, `isAvailable: true/false`)।
-3. **`bookings`:** কাস্টমারের পাঠানো রিপেয়ার রিকোয়েস্ট ও কাজের বর্তমান অবস্থা (`requested` → `accepted` → `in-progress` → `completed` বা `rejected`/`cancelled`) এবং `paymentStatus` (`unpaid`/`paid`)।
-4. **`payments`:** কাজ শেষ হওয়ার পর কাস্টমার Stripe দিয়ে যে পেমেন্ট করবে তার রেকর্ড।
+### 1. Public & Auth Pages (Sobai Dekhte Pare)
+
+| Page / Route | Mathay Rakhar Moto Main Kaj |
+| --- | --- |
+| **`/`** (Home) | Hero banner + search/CTA, 6 ta latest approved & available service cards, 4-step "How FixMate Works", ar Popular Categories (`/services?category=...` click korle oi category-te filter hoye jabe). |
+| **`/services`** (Browse Services) | Shudhu `approvalStatus: 'approved'` ebong `isAvailable: true` services grid-e dekhabe. Search, category/mode filter, ar price/newest sort server-side theke kaj korbe (reload dileo thakbe). |
+| **`/services/[id]`** (Service Details) | Service-er full details + technician summary. **Customer** hole **Request Repair** form khulbe; **Technician/Admin** hole disabled/hidden thakbe; **Logged-out** hole `/sign-in`-e niye jabe. |
+| **`/about`** (How It Works / About) | Platform-er overview, workflow, ar trust info. |
+| **`/sign-up`** & **`/sign-in`** | Sign up-e **Customer** ba **Technician** role select kora jay (**Admin** na), password validation thake. Login korle target route ba nijer role-er dashboard-e redirect hoy. |
+| **`/payment/success`** & **`/payment/cancel`** | Stripe payment-er por session verify kore `payments` collection-e save + booking `paid` korbe (`/success`), ba cancel korle database change na kore `/cancel` dekhabe. |
 
 ---
 
-## ধাপে ধাপে কাজের তালিকা (১টার পর ১টা শেষ করবেন)
+### 2. Customer Dashboard Pages (`role: 'customer'`)
 
-### ধাপ ১: প্রজেক্ট সেটআপ ও বেসিক কানেকশন
-- [ ] **কাজ ১:** ২টি প্রজেক্ট ফোল্ডার রেডি রাখা — `fixmate-client` (Next.js) এবং `fixmate-server` (Express)।
-- [ ] **কাজ ২:** ক্লায়েন্টে `.env.local` (ImgBB API Key, Server URL, BetterAuth Key) এবং সার্ভারে `.env` (MongoDB URL, JWT Secret, Stripe Key) সেট করা।
-- [ ] **কাজ ৩:** Express সার্ভারকে MongoDB-এর সাথে কানেক্ট করা এবং ব্রাউজারে `http://localhost:5000` (বা আপনার পোর্ট) ওপেন করলে `"FixMate Server is running"` লেখা আসে কি না দেখা।
-- [ ] **কাজ ৪:** ক্লায়েন্টের `layout.jsx`-এ `react-hot-toast`-এর `<Toaster />` বসানো, যাতে সব জায়গায় সুন্দর পপ-আপ নোটিফিকেশন দেখায়।
-
----
-
-### ধাপ ২: লগইন, সাইন-আপ ও রোল সিস্টেম (Authentication)
-- [ ] **কাজ ৫:** BetterAuth-এর সাথে MongoDB কানেক্ট করা এবং ইউজারের বাড়তি ফিল্ড হিসেবে `role` (ডিফল্ট `'customer'`), `phone`, `area`, `bio` যোগ করা।
-- [ ] **কাজ ৬:** **Sign Up পেজ (`/sign-up`)** বানানো — নাম, ইমেইল, পাসওয়ার্ড (কমপক্ষে ৬ অক্ষর, ১টি বড় হাতের ও ১টি ছোট হাতের অক্ষর থাকতে হবে) এবং রোল বাছাই (`Customer` অথবা `Technician` — কেউ নিজে থেকে `Admin` হতে পারবে না)।
-- [ ] **কাজ ৭:** **Sign In পেজ (`/sign-in`)** বানানো — লগইন সফল হলে ইউজার যে পেজে যেতে চেয়েছিল সেখানে অথবা তার নিজের ড্যাশবোর্ডে নিয়ে যাওয়া।
-- [ ] **কাজ ৮:** সব `/dashboard/*` পেজ প্রোটেক্ট করা — লগইন ছাড়া ঢুকতে চাইলে `/sign-in`-এ পাঠাবে, আর কাস্টমার যদি অ্যাডমিনের লিংকে ঢুকতে চায় তবে তাকে আটকে দেবে।
+| Page / Route | Mathay Rakhar Moto Main Kaj |
+| --- | --- |
+| **`/dashboard/customer`** | Overview stats cards: **Total Requests**, **Active Jobs**, **Completed Jobs**. |
+| **`/dashboard/customer/bookings`** | Nijer sob bookings-er status (`Requested` → `Accepted` → `In Progress` → `Completed` / `Rejected` / `Cancelled`) ar payment (`Unpaid` / `Paid`) dekha. Shudhu `requested` thakle **Cancel** button, ar `completed` + `unpaid` thakle **Pay Now** button. |
+| **`/dashboard/customer/payments`** | Nijer dewa sob Stripe payments-er history (service title, technician, amount, transaction ID, date). |
 
 ---
 
-### ধাপ ৩: পাবলিক পেজ ও ডিজাইন (Navbar, Footer, Home, About)
-- [ ] **কাজ ৯:** **Navbar ও Footer** বানানো — উপরে ফিক্সড (sticky) Navbar থাকবে। লগইন না থাকলে `Sign In` / `Sign Up` বাটন, আর লগইন থাকলে প্রোফাইল ছবিতে ক্লিক করলে নাম, রোল ব্যাজ, `Dashboard`, `Update Profile`, `Sign Out` দেখাবে। Footer-এ নতুন `X` লোগো দিতে হবে।
-- [ ] **কাজ ১০:** **Home পেজ (`/`)** বানানো:
-  - সুন্দর একটি Hero ব্যানার ও `/services` পেজে যাওয়ার বাটন।
-  - সর্বশেষ অ্যাপ্রুভ হওয়া **৬টি সার্ভিস কার্ড** (`approvalStatus: 'approved'` এবং `isAvailable: true`)।
-  - "How FixMate Works" (৪ ধাপে কীভাবে কাজ হয়)।
-  - ক্যাটাগরি কার্ড (Smartphone, AC, Laptop, TV ইত্যাদি) — যেগুলোতে ক্লিক করলে ওই ক্যাটাগরির সার্ভিস দেখাবে।
-- [ ] **কাজ ১১:** **About পেজ (`/about`)**, কাস্টম লোডিং (`loading.tsx`), এবং কাস্টম `404 Not Found` (`not-found.tsx`) পেজ বানানো।
+### 3. Technician Dashboard Pages (`role: 'technician'`)
+
+| Page / Route | Mathay Rakhar Moto Main Kaj |
+| --- | --- |
+| **`/dashboard/technician`** | Overview stats cards: **Total Services**, **Approved Services**, **Pending Requests**. |
+| **`/dashboard/technician/add-service`** | Notun service add korar form (ImgBB image upload সহ). Save hole `approvalStatus: 'pending'` thakbe (Admin approve na kora porjonto `/services`-e asbe na). |
+| **`/dashboard/technician/my-services`** | Nijer services list + **Edit** (edit korle abar `pending` hoye jay), **Delete** (confirmation modal), ar **Availability toggle** (`isAvailable` off korle public page theke sore jay). |
+| **`/dashboard/technician/requests`** | Nijer service-er incoming requests + status filter. Pipeline step-by-step: `requested` → Accept/Reject → `accepted` → Start Work (`in-progress`) → `in-progress` → Mark Completed (`finalAmount` set kore). |
 
 ---
 
-### ধাপ ৪: সার্ভিস দেখা ও রিপেয়ার রিকোয়েস্ট পাঠানো
-- [ ] **কাজ ১২:** সার্ভারে `GET /services` এবং `GET /services/:id` API বানানো — যেন পাবলিক পেজে শুধু অ্যাপ্রুভ হওয়া ও অ্যাভেইলেবল সার্ভিসই দেখায়।
-- [ ] **কাজ ১৩:** **All Services পেজ (`/services`)** বানানো — সব সার্ভিস সুন্দর গ্রিডে সমান সাইজের কার্ডে দেখানো।
-- [ ] **কাজ ১৪:** **Service Details পেজ (`/services/[id]`)** বানানো:
-  - সার্ভিসের বিস্তারিত ও টেকনিশিয়ানের তথ্য দেখাবে।
-  - **Request Repair বাটন:** শুধু লগইন করা `Customer` রিকোয়েস্ট পাঠাতে পারবে (টেকনিশিয়ান বা অ্যাডমিন পারবে না)। ফর্মে ফোন, ঠিকানা, তারিখ (আজ বা পরের তারিখ) ও সমস্যার বিবরণ (কমপক্ষে ২০ অক্ষর) দিয়ে সাবমিট করলে `bookings` কালেকশনে সেভ হবে। একই সার্ভিসে একটি রিকোয়েস্ট চালু থাকলে দ্বিতীয়বার রিকোয়েস্ট করা যাবে না।
+### 4. Admin Dashboard Pages (`role: 'admin'`)
+
+| Page / Route | Mathay Rakhar Moto Main Kaj |
+| --- | --- |
+| **`/dashboard/admin`** | Overview stats cards: **Total Users**, **Total Technicians**, **Pending Services**. |
+| **`/dashboard/admin/users`** | Sob users list + role change (`customer` / `technician` / `admin`), tobe admin **nijer role change korte parbe na**. |
+| **`/dashboard/admin/services`** | Sob technician-der services + **Approve** (`approved`) / **Reject** (`rejected`) action (pending gula age/sahoj-e pawa jabe). |
+| **`/dashboard/admin/bookings`** | Platform-er sob bookings (read-only) + status filter. |
+| **`/dashboard/admin/transactions`** | Total revenue + sob `payments` records (customer, technician, service, amount, transaction ID, date). |
 
 ---
 
-### ধাপ ৫: ৩টি ড্যাশবোর্ড ও প্রোফাইল আপডেট
-- [ ] **কাজ ১৫:** একটি কমন **Dashboard Layout** বানানো (বাম পাশে রোল অনুযায়ী মেনু, উপরে ইউজারের নাম ও ছবি) এবং **Update Profile (`/dashboard/profile`)** পেজ বানানো (যাতে নাম, ফোন, এলাকা, বায়ো ও ImgBB দিয়ে প্রোফাইল ছবি বদলানো যায়)।
-- [ ] **কাজ ১৬:** **Technician Dashboard (`/dashboard/technician`)**:
-  - **Overview:** মোট সার্ভিস, অ্যাপ্রুভ হওয়া সার্ভিস ও পেন্ডিং রিকোয়েস্টের সংখ্যা কার্ডে দেখানো।
-  - **Add Service:** ImgBB-তে ছবি আপলোড করে সার্ভারে নতুন সার্ভিস যোগ করা (`approvalStatus: 'pending'`)।
-  - **My Services:** নিজের সার্ভিস এডিট করা (এডিট করলে আবার `pending` হবে), ডিলিট করা (কনফার্মেশন পপ-আপসহ), এবং অন/অফ (`isAvailable`) করা।
-  - **Manage Requests:** কাস্টমারের রিকোয়েস্ট `Accept` / `Reject` করা, কাজ শুরু হলে `Start Work` (`in-progress`), এবং কাজ শেষে `Mark Completed` চেপে ফাইনাল বিল (`finalAmount`) বসানো।
-- [ ] **কাজ ১৭:** **Customer Dashboard (`/dashboard/customer`)**:
-  - **Overview:** মোট রিকোয়েস্ট, চলমান কাজ ও সম্পন্ন কাজের সংখ্যা কার্ডে দেখানো।
-  - **My Bookings:** নিজের সব বুকিংয়ের তালিকা। স্ট্যাটাস `requested` থাকা অবস্থায় `Cancel` বাটন থাকবে। টেকনিশিয়ান কাজ `completed` করলে **`Pay Now`** বাটন আসবে।
-  - **Payment History:** পেমেন্ট করা কাজের তালিকা ও ট্রানজেকশন আইডি দেখা।
-- [ ] **কাজ ১৮:** **Admin Dashboard (`/dashboard/admin`)**:
-  - **Overview:** মোট ইউজার, মোট টেকনিশিয়ান ও পেন্ডিং সার্ভিসের সংখ্যা কার্ডে দেখানো।
-  - **Manage Users:** সব ইউজার দেখা ও রোল পরিবর্তন করা (অ্যাডমিন নিজের রোল বদলাতে পারবে না)।
-  - **Service Approval:** টেকনিশিয়ানদের পেন্ডিং সার্ভিসগুলো `Approve` বা `Reject` করা।
-  - **All Bookings & Transactions:** প্ল্যাটফর্মের সব বুকিং
+### 5. Shared Private Page (Sob 3 Role-er Jonno)
+
+| Page / Route | Mathay Rakhar Moto Main Kaj |
+| --- | --- |
+| **`/dashboard/profile`** | Name, Phone, Area, Bio, ar Profile Photo (ImgBB) update kora jay (`Email` & `Role` read-only). Save korlei **logout na korei** Navbar ar Top bar-e new name/photo update hote hobe. |
+
+---
+
+### Mathay Rakhar 3ta Golden Rule (Testing-er Somoy)
+
+1. **Route Protection & Reload:** Je kono `/dashboard/...` route-e reload dile jeno user login page-e kick na khay, ar onno role-er route-e gele `403`/redirect/forbidden kaj kore.
+2. **Status & Payment Gate:** Job `completed` + `unpaid` na hole Pay Now thakbe na; status pipeline skip kora jabe na; same service-e active booking thakle duplicate request server block korbe.
+3. **Approval Gate:** Notun service ba edited service `pending` thake — Admin `approved` korle ebong `isAvailable: true` thaklei public `/services`-e dekha jay.
+
+Ei page map-ta mathay rekhe ekhon chaile apni **Customer**, **Technician**, ba **Admin** — je kono ekta role diye testing shuru korte paren. Kon role-ta age check korben?
+
+
+
+অবশ্যই, একদম সহজ বাংলায় দিচ্ছি — কোন পেজে কী কাজ হয় সেটার মাইন্ড ম্যাপ আর আপনার কাজ/টেস্টিং করার **First Step → Second Step → Third Step → End** কীভাবে করবেন, সেটার পরিষ্কার ধাপ।
+
+---
+
+### ১. কোন পেজে কী কাজ হয় (সহজ বাংলায় Mind Map)
+
+#### Public ও Auth পেজ (সবাই দেখতে পারে)
+
+* **`/` (Home):** হিরো ব্যানার, লেটেস্ট ৬টি অ্যাপ্রুভড ও অ্যাভেইলেবল সার্ভিস কার্ড, ৪ ধাপের "How FixMate Works", আর ক্যাটাগরি কার্ড (ক্লিক করলে `/services?category=...` এ গিয়ে ওই ক্যাটাগরি ফিল্টার হয়)।
+* **`/services` (Browse Services):** শুধু `approvalStatus: 'approved'` এবং `isAvailable: true` সার্ভিসগুলো দেখায়। সার্চ, ফিল্টার ও সর্ট সার্ভার (MongoDB) থেকে কাজ করে এবং রিলোড দিলেও থাকে।
+* **`/services/[id]` (Service Details):** সার্ভিসের বিস্তারিত ও টেকনিশিয়ানের তথ্য দেখায়। **Customer** হলে **Request Repair** ফর্ম খোলে; **Technician/Admin** হলে বাটন ডিজেবল/লুকানো থাকে; লগ-আউট থাকলে `/sign-in` এ নেয়।
+* **`/about`:** প্ল্যাটফর্মের কাজের নিয়ম ও তথ্য।
+* **`/sign-up` ও `/sign-in`:** সাইন আপে **Customer** বা **Technician** রোল নেওয়া যায় (**Admin** না), পাসওয়ার্ড ভ্যালিডেশন থাকে। লগইনে সঠিক ড্যাশবোর্ডে নিয়ে যায়।
+* **`/payment/success` ও `/payment/cancel`:** Stripe পেমেন্ট সফল হলে সেশন ভেরিফাই করে `payments` কালেকশনে সেভ ও বুকিং `paid` করে (`/success`); ক্যান্সেল করলে ডাটাবেস বদলায় না (`/cancel`)।
+
+#### Customer ড্যাশবোর্ড (`role: 'customer'`)
+
+* **`/dashboard/customer`:** Total Requests, Active Jobs, Completed Jobs কার্ড।
+* **`/dashboard/customer/bookings`:** নিজের সব বুকিংয়ের স্ট্যাটাস ও পেমেন্ট স্ট্যাটাস দেখায়। স্ট্যাটাস `requested` থাকলে **Cancel** বাটন, আর `completed` + `unpaid` থাকলে **Pay Now** বাটন থাকে।
+* **`/dashboard/customer/payments`:** নিজের করা সব পেমেন্টের হিস্ট্রি (সার্ভিস, টেকনিশিয়ান, অ্যামাউন্ট, ট্রানজেকশন আইডি, তারিখ)।
+
+#### Technician ড্যাশবোর্ড (`role: 'technician'`)
+
+* **`/dashboard/technician`:** Total Services, Approved Services, Pending Requests কার্ড।
+* **`/dashboard/technician/add-service`:** নতুন সার্ভিস যোগ করার ফর্ম (ImgBB ইমেজ আপলোডসহ)। সেভ হলে `approvalStatus: 'pending'` থাকে।
+* **`/dashboard/technician/my-services`:** নিজের সার্ভিসের লিস্ট, **Edit** (এডিট করলে আবার `pending` হয়), **Delete** (কনফার্মেশন মডাল), ও **Availability toggle** (`isAvailable` অফ করলে পাবলিক পেজে দেখায় না)।
+* **`/dashboard/technician/requests`:** নিজের সার্ভিসের রিকোয়েস্ট ও স্ট্যাটাস ফিল্টার। ধাপে ধাপে কাজ এগোয়: `requested` → Accept/Reject → `accepted` → Start Work (`in-progress`) → `in-progress` → Mark Completed (`finalAmount` বসিয়ে)।
+
+#### Admin ড্যাশবোর্ড (`role: 'admin'`)
+
+* **`/dashboard/admin`:** Total Users, Total Technicians, Pending Services কার্ড।
+* **`/dashboard/admin/users`:** সব ইউজার ও রোল পরিবর্তন (`customer` / `technician` / `admin`), তবে অ্যাডমিন **নিজের রোল বদলাতে পারবে না**।
+* **`/dashboard/admin/services`:** সব সার্ভিস দেখা এবং **Approve** বা **Reject** করা (পেন্ডিংগুলো সহজে পাওয়া যায়)।
+* **`/dashboard/admin/bookings`:** প্ল্যাটফর্মের সব বুকিং (রিড-অনলি) ও স্ট্যাটাস ফিল্টার।
+* **`/dashboard/admin/transactions`:** মোট রেভিনিউ ও সব পেমেন্টের তালিকা।
+
+#### সবার জন্য Shared পেজ
+
+* **`/dashboard/profile`:** Name, Phone, Area, Bio ও Profile Photo (ImgBB) আপডেট (`Email` ও `Role` রিড-অনলি)। সেভ করলে **লগআউট ছাড়াই** Navbar ও Top bar-এ নতুন নাম/ছবি আপডেট হতে হবে।
+
+---
+
+### ২. আপনার কাজ করার First → Second → Third → End ধাপ
+
+#### First Step: শুরু করার প্রস্তুতি (Setup & Auth Check)
+
+1. `.env` ও `.env.local` এ MongoDB, BetterAuth, JWT, ImgBB, Stripe সব ঠিক আছে কি না দেখুন।
+2. ডাটাবেস/সিড দিয়ে অন্তত ১টি **Admin** অ্যাকাউন্ট তৈরি করুন; Sign Up থেকে **Customer** ও **Technician** অ্যাকাউন্ট খুলুন; প্রয়োজনমতো সিড ডাটা রাখুন।
+3. যেকোনো `/dashboard/...` রাউটে গিয়ে **Page Reload** দিন — ইউজার যেন লগইন পেজে ছিটকে না পড়ে এবং CORS / 404 / 504 না আসে।
+
+#### Second Step: রোল অনুযায়ী ফ্লো চেক (Customer → Technician → Admin)
+
+1. **Customer ফ্লো:** `/services` থেকে সার্ভিস দেখে `/services/[id]` এ গিয়ে Request করুন → `/dashboard/customer/bookings` এ গিয়ে `requested` অবস্থায় Cancel টেস্ট করুন (আরেকটা রিকোয়েস্টে `completed` পর্যন্ত নিয়ে Pay Now দিয়ে Stripe টেস্ট কার্ডে পেমেন্ট করে `/dashboard/customer/payments` দেখুন)।
+2. **Technician ফ্লো:** `/dashboard/technician/add-service` এ সার্ভিস অ্যাড করুন (`pending` হিসেবে সেভ হয় কি না দেখুন) → `/dashboard/technician/my-services` এ Edit (আবার `pending` হয় কি না), Toggle, Delete দেখুন → `/dashboard/technician/requests` এ ধাপে ধাপে `accepted` → `in-progress` → `completed` (`finalAmount` দিয়ে) করুন।
+3. **Admin ফ্লো:** `/dashboard/admin/users` এ রোল বদলান (নিজের রোল যেন না বদলায়) → `/dashboard/admin/services` এ টেকনিশিয়ানের `pending` সার্ভিস Approve করুন (এবার `/services` এ দেখা যাবে) → `/dashboard/admin/bookings` ও `/dashboard/admin/transactions` চেক করুন।
+
+#### Third Step: শেয়ার্ড প্রোফাইল ও এজ কেস (Edge Cases)
+
+1. `/dashboard/profile` এ প্রোফাইল আপডেট করে লগআউট না করেই Navbar ও Dashboard Top bar-এ বদল দেখুন।
+2. ডুপ্লিকেট অ্যাক্টিভ বুকিং ব্লক হচ্ছে কি না, স্ট্যাটাস স্কিপ করলে সার্ভার আটকাচ্ছে কি না, আর অন্য রোলের ড্যাশবোর্ডে গেলে `403`/রিডাইরেক্ট কাজ করছে কি না যাচাই করুন।
+
+#### End: সাবমিশনের আগে ফাইনাল চেক (Final Submission Check)
+
+1. Live URL ও Server/Client GitHub repo তে যথেষ্ট মিনিংফুল কমিট ও `README.md` (Admin credentials সহ) আছে কি না নিশ্চিত করুন।
+2. টেস্ট অ্যাকাউন্ট (Admin, Technician, Customer) লাইভ সাইটে লগইন করে কাজ করছে কি না একবার শেষবার দেখে নিন।
+
+আপনি এখন **First Step** থেকে শুরু করে কোন ধাপে আছেন বা কোথায় আটকে যাচ্ছেন বললে সেই অনুযায়ী ঠিক করে দিচ্ছি।

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSession } from "@/lib/auth-client";
 
 import {
-  getServices,
+  getTechnicianServices,
   updateServiceById,
   deleteServiceById,
 } from "@/lib/api";
@@ -16,12 +16,7 @@ import toast from "react-hot-toast";
 export default function MyServices() {
   const { data: session, isPending } = useSession();
 
-  // =====================================
-  // 1. States
-  // =====================================
-
-  const [mounted, setMounted] = useState(false);
-
+  // States
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,21 +28,10 @@ export default function MyServices() {
 
   const [updatingId, setUpdatingId] = useState(null);
 
-  // =====================================
-  // 2. Browser Mounted
-  // =====================================
+  const email = session?.user?.email;
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // =====================================
-  // 3. Get My Services
-  // =====================================
-
+  // Load only logged-in technician's services
   const loadMyServices = async () => {
-    const email = session?.user?.email;
-
     if (!email) {
       setServices([]);
       setLoading(false);
@@ -57,38 +41,26 @@ export default function MyServices() {
     try {
       setLoading(true);
 
-      const data = await getServices();
+      const data = await getTechnicianServices(email);
 
-      const allServices = Array.isArray(data)
-        ? data
-        : data?.services || [];
-
-      const myServices = allServices.filter(
-        (service) =>
-          service.technicianEmail?.toLowerCase() ===
-          email.toLowerCase()
-      );
-
-      setServices(myServices);
+      setServices(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Load Services Error:", error);
       toast.error(error.message || "Failed to load services");
+      setServices([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Session ready হলে Services আনবে
+  // Load services when session is ready
   useEffect(() => {
-    if (!mounted || isPending) return;
+    if (isPending) return;
 
     loadMyServices();
-  }, [mounted, isPending, session?.user?.email]);
+  }, [isPending, email]);
 
-  // =====================================
-  // 4. Availability ON / OFF
-  // =====================================
-
+  // Availability ON / OFF
   const handleToggleAvailability = async (service) => {
     const nextStatus = !service.isAvailable;
 
@@ -120,10 +92,7 @@ export default function MyServices() {
     }
   };
 
-  // =====================================
-  // 5. Edit Service
-  // =====================================
-
+  // Edit Service
   const handleEditSubmit = async (e) => {
     e.preventDefault();
 
@@ -139,21 +108,32 @@ export default function MyServices() {
       estimatedDuration: form.elements.estimatedDuration.value.trim(),
       serviceMode: form.elements.serviceMode.value,
       serviceArea: form.elements.serviceArea.value.trim(),
-      approvalStatus: "pending",
     };
+
+    if (
+      !updatedData.title ||
+      !updatedData.description ||
+      !updatedData.serviceArea ||
+      !updatedData.estimatedDuration ||
+      updatedData.basePrice <= 0
+    ) {
+      toast.error("Please provide valid service information");
+      return;
+    }
 
     try {
       setSavingEdit(true);
 
-      await updateServiceById(
-        editingService._id,
-        updatedData
-      );
+      await updateServiceById(editingService._id, updatedData);
 
       setServices((prev) =>
         prev.map((item) =>
           item._id === editingService._id
-            ? { ...item, ...updatedData }
+            ? {
+                ...item,
+                ...updatedData,
+                approvalStatus: "pending",
+              }
             : item
         )
       );
@@ -169,10 +149,7 @@ export default function MyServices() {
     }
   };
 
-  // =====================================
-  // 6. Delete Service
-  // =====================================
-
+  // Delete Service
   const handleConfirmDelete = async () => {
     if (!deletingService?._id) return;
 
@@ -182,9 +159,7 @@ export default function MyServices() {
       await deleteServiceById(deletingService._id);
 
       setServices((prev) =>
-        prev.filter(
-          (item) => item._id !== deletingService._id
-        )
+        prev.filter((item) => item._id !== deletingService._id)
       );
 
       toast.success("Service deleted successfully");
@@ -198,10 +173,7 @@ export default function MyServices() {
     }
   };
 
-  // =====================================
-  // 7. Approval Badge
-  // =====================================
-
+  // Approval Badge
   const getApprovalBadge = (status) => {
     if (status === "approved") return "badge-success";
     if (status === "rejected") return "badge-error";
@@ -209,11 +181,8 @@ export default function MyServices() {
     return "badge-warning";
   };
 
-  // =====================================
-  // 8. Loading Screen
-  // =====================================
-
-  if (!mounted || isPending || loading) {
+  // Loading Screen
+  if (isPending || loading) {
     return (
       <div className="flex justify-center items-center min-h-60">
         <span className="loading loading-spinner loading-lg"></span>
@@ -222,21 +191,14 @@ export default function MyServices() {
     );
   }
 
-  // =====================================
-  // 9. Main UI
-  // =====================================
-
+  // Main UI
   return (
     <div className="space-y-6">
 
       {/* Header */}
-
       <div className="flex flex-wrap justify-between items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold">
-            My Services
-          </h1>
-
+          <h1 className="text-2xl font-bold">My Services</h1>
           <p className="text-sm opacity-70">
             Manage your repair services.
           </p>
@@ -251,10 +213,8 @@ export default function MyServices() {
       </div>
 
       {/* Empty State */}
-
       {services.length === 0 ? (
         <div className="bg-base-100 rounded-xl shadow p-10 text-center">
-
           <h2 className="text-lg font-semibold mb-3">
             No Services Found
           </h2>
@@ -269,16 +229,12 @@ export default function MyServices() {
           >
             Add Your First Service
           </Link>
-
         </div>
       ) : (
 
         /* Services Table */
-
         <div className="overflow-x-auto bg-base-100 rounded-xl shadow">
-
           <table className="table w-full">
-
             <thead>
               <tr>
                 <th>Service</th>
@@ -291,16 +247,12 @@ export default function MyServices() {
             </thead>
 
             <tbody>
-
               {services.map((service) => (
-
                 <tr key={service._id}>
 
                   {/* Service Info */}
-
                   <td>
                     <div className="flex items-center gap-3">
-
                       {service.image && (
                         <img
                           src={service.image}
@@ -318,22 +270,18 @@ export default function MyServices() {
                           {service.serviceMode} • {service.serviceArea}
                         </p>
                       </div>
-
                     </div>
                   </td>
 
                   {/* Category */}
-
                   <td>{service.category}</td>
 
                   {/* Price */}
-
                   <td className="font-semibold">
                     ৳{service.basePrice}
                   </td>
 
                   {/* Approval */}
-
                   <td>
                     <span
                       className={`badge capitalize ${getApprovalBadge(
@@ -345,10 +293,8 @@ export default function MyServices() {
                   </td>
 
                   {/* Availability */}
-
                   <td>
                     <div className="flex items-center gap-2">
-
                       <input
                         type="checkbox"
                         className="toggle toggle-success toggle-sm"
@@ -362,71 +308,46 @@ export default function MyServices() {
                       <span className="text-xs">
                         {service.isAvailable ? "ON" : "OFF"}
                       </span>
-
                     </div>
                   </td>
 
                   {/* Actions */}
-
                   <td>
                     <div className="flex gap-2">
-
                       <button
-                        onClick={() =>
-                          setEditingService(service)
-                        }
+                        onClick={() => setEditingService(service)}
                         className="btn btn-outline btn-xs"
                       >
                         Edit
                       </button>
 
                       <button
-                        onClick={() =>
-                          setDeletingService(service)
-                        }
+                        onClick={() => setDeletingService(service)}
                         className="btn btn-error btn-outline btn-xs"
                       >
                         Delete
                       </button>
-
                     </div>
                   </td>
-
                 </tr>
-
               ))}
-
             </tbody>
           </table>
         </div>
       )}
 
-      {/* =====================================
-          Edit Modal
-      ===================================== */}
-
+      {/* Edit Modal */}
       {editingService && (
-
         <div className="modal modal-open">
-
           <div className="modal-box max-w-lg">
-
             <h3 className="text-xl font-bold mb-5">
               Edit Service
             </h3>
 
-            <form
-              onSubmit={handleEditSubmit}
-              className="space-y-4"
-            >
-
-              {/* Title */}
+            <form onSubmit={handleEditSubmit} className="space-y-4">
 
               <div>
-                <label className="label">
-                  Service Title
-                </label>
-
+                <label className="label">Service Title</label>
                 <input
                   type="text"
                   name="title"
@@ -436,13 +357,8 @@ export default function MyServices() {
                 />
               </div>
 
-              {/* Category */}
-
               <div>
-                <label className="label">
-                  Category
-                </label>
-
+                <label className="label">Category</label>
                 <select
                   name="category"
                   defaultValue={editingService.category}
@@ -459,13 +375,8 @@ export default function MyServices() {
                 </select>
               </div>
 
-              {/* Service Mode */}
-
               <div>
-                <label className="label">
-                  Service Mode
-                </label>
-
+                <label className="label">Service Mode</label>
                 <select
                   name="serviceMode"
                   defaultValue={editingService.serviceMode}
@@ -477,15 +388,9 @@ export default function MyServices() {
                 </select>
               </div>
 
-              {/* Price and Duration */}
-
               <div className="grid grid-cols-2 gap-3">
-
                 <div>
-                  <label className="label">
-                    Base Price
-                  </label>
-
+                  <label className="label">Base Price</label>
                   <input
                     type="number"
                     name="basePrice"
@@ -498,10 +403,7 @@ export default function MyServices() {
                 </div>
 
                 <div>
-                  <label className="label">
-                    Estimated Duration
-                  </label>
-
+                  <label className="label">Estimated Duration</label>
                   <input
                     type="text"
                     name="estimatedDuration"
@@ -510,16 +412,10 @@ export default function MyServices() {
                     required
                   />
                 </div>
-
               </div>
 
-              {/* Service Area */}
-
               <div>
-                <label className="label">
-                  Service Area
-                </label>
-
+                <label className="label">Service Area</label>
                 <input
                   type="text"
                   name="serviceArea"
@@ -529,13 +425,8 @@ export default function MyServices() {
                 />
               </div>
 
-              {/* Description */}
-
               <div>
-                <label className="label">
-                  Description
-                </label>
-
+                <label className="label">Description</label>
                 <textarea
                   name="description"
                   rows="4"
@@ -545,10 +436,7 @@ export default function MyServices() {
                 />
               </div>
 
-              {/* Buttons */}
-
               <div className="modal-action">
-
                 <button
                   type="button"
                   className="btn btn-ghost"
@@ -565,25 +453,16 @@ export default function MyServices() {
                 >
                   {savingEdit ? "Saving..." : "Save Changes"}
                 </button>
-
               </div>
-
             </form>
-
           </div>
         </div>
       )}
 
-      {/* =====================================
-          Delete Confirmation Modal
-      ===================================== */}
-
+      {/* Delete Confirmation Modal */}
       {deletingService && (
-
         <div className="modal modal-open">
-
           <div className="modal-box max-w-sm">
-
             <h3 className="text-xl font-bold">
               Delete Service?
             </h3>
@@ -595,7 +474,6 @@ export default function MyServices() {
             </p>
 
             <div className="modal-action">
-
               <button
                 type="button"
                 className="btn btn-ghost"
@@ -613,13 +491,10 @@ export default function MyServices() {
               >
                 {deleting ? "Deleting..." : "Confirm Delete"}
               </button>
-
             </div>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

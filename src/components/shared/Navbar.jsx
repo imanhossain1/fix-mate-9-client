@@ -1,18 +1,37 @@
-
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, signOut } from "@/lib/auth-client";
 
 const Navbar = () => {
   const router = useRouter();
-  const { data: session, isPending } = useSession();
+  const { data: session, isPending, refetch } = useSession();
+  const [liveName, setLiveName] = useState(null);
 
-  // Login করা User-এর Role অনুযায়ী Dashboard URL তৈরি
+  useEffect(() => {
+    const handleProfileUpdated = (e) => {
+      if (e?.detail?.name) {
+        setLiveName(e.detail.name);
+      }
+      if (typeof refetch === "function") {
+        refetch();
+      }
+      router.refresh();
+    };
+
+    window.addEventListener("fixmate:profile-updated", handleProfileUpdated);
+    return () => {
+      window.removeEventListener("fixmate:profile-updated", handleProfileUpdated);
+    };
+  }, [refetch, router]);
+
+  const displayName = liveName || session?.user?.name || "";
+
+  // Login করা User-এর Role অনুযায়ী Dashboard URL তৈরি
   const role = session?.user?.role;
- console.log('sesstio n role ====',role);
- 
+  console.log("sesstio n role ====", role);
 
   const dashboardLink = {
     customer: "/dashboard/customer",
@@ -20,7 +39,7 @@ const Navbar = () => {
     admin: "/dashboard/admin",
   };
 
-  // User-এর Role অনুযায়ী Dashboard Link নির্বাচন
+  // User-এর Role অনুযায়ী Dashboard Link নির্বাচন
   const userDashboard = dashboardLink[role] || "/dashboard/customer";
 
   // Logout Function
@@ -79,14 +98,14 @@ const Navbar = () => {
                     <div className="avatar placeholder">
                       <div className="w-9 rounded-full bg-primary text-primary-content">
                         <span>
-                          {session.user.name?.charAt(0).toUpperCase()}
+                          {displayName?.charAt(0).toUpperCase()}
                         </span>
                       </div>
                     </div>
 
                     {/* User Name */}
                     <span className="hidden sm:inline font-semibold">
-                      {session.user.name}
+                      {displayName}
                     </span>
 
                     <span>⌄</span>

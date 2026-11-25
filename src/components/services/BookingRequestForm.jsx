@@ -58,7 +58,7 @@ export default function BookingRequestForm({ service }) {
 
       toast.success("Repair request submitted successfully!");
 
-      router.push("/dashboard/customer/bookings");
+      router.push("/dashboard/customer/my-bookings");
     } catch (error) {
       toast.error(error.message || "Something went wrong");
     } finally {
